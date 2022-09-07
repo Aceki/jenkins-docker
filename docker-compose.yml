@@ -1,0 +1,49 @@
+networks:
+  jenkins-network:
+    name: jenkins-network
+
+services:
+  jenkins:
+    build: .
+    container_name: jenkins
+    restart: on-failure
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - jenkins-docker-certs:/certs/client:ro
+    depends_on:
+      - jenkins-docker
+    networks:
+      - jenkins-network
+
+  jenkins-docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    ports:
+      - 2376:2376
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home
+    networks:
+      jenkins-network:
+        aliases:
+          - docker
+    storage_opt:
+      driver: overlay2
+    privileged: true
+
+volumes:
+  jenkins-data:
+    driver: local
+    name: jenkins-data
+  jenkins-docker-certs:
+    driver: local
+    name: jenkins-docker-certs
