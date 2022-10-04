@@ -1,0 +1,35 @@
+services:
+  jenkins:
+    build: .
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    volumes:
+      - jenkins-docker-certs:/certs/client:ro
+    depends_on:
+      - jenkins-docker
+
+  jenkins-docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    ports:
+      - 2376:2376
+    volumes:
+      - jenkins-docker-certs:/certs/client
+      - jenkins-data:/var/jenkins_home
+    networks:
+      jenkins-network:
+        aliases:
+          - docker
+    storage_opt:
+      driver: overlay2
+    privileged: true
+
+volumes:
+  jenkins-docker-certs:
+    driver: local
+    name: jenkins-docker-certs
+
